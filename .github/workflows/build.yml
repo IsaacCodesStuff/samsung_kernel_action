@@ -4,7 +4,7 @@ on:
     inputs:
       BRANCH:
         description: 'Branch to build'
-        default: 'master'
+        default: 'main'
         required: true
       URL:
         description: 'Repository URL'
@@ -24,7 +24,7 @@ jobs:
     - name: Prepare dependencies
       run: |
         sudo apt update -y
-        sudo apt install rsync bc cpio flex bison aptitude aria2 git python-is-python3 tar perl wget curl lz4 ccache -y
+        sudo apt install rsync bc cpio flex bison build-essential aptitude aria2 git python-is-python3 tar perl wget curl lz4 ccache -y
         sudo aptitude install libssl-dev -y
 
     - name: Clone Kernel Source
@@ -109,19 +109,3 @@ jobs:
         name: LKM-${{ steps.buildKernel.outputs.buildDetails }}
         path: rootdir/kernel_root/out/target/product/a06/obj/KLEAF_OBJ/dist/kernel_device_modules-6.6/mgk_64_k66_kernel_aarch64.user/drivers/*
         compression-level: 9
-
-    - name: Upload to telegram
-      env:
-        CHAT_ID: ${{ secrets.CHAT_ID }}
-        BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        TITLE: "Galaxy A05 Kernel"
-      run: |
-        if [ ! -z "${{ secrets.BOT_TOKEN }}" ]; then
-          export VERSION=$(cd kernel_root && git rev-list --count HEAD)
-          ZIP=${{ steps.buildKernel.outputs.zipPath }}
-          export MD5SUM="$(md5sum $ZIP | cut -d' ' -f1)"
-          pip3 install telethon
-          python3 scripts/bot.py $ZIP
-        fi
-      working-directory: rootdir
