@@ -15,7 +15,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         path: rootdir
         show-progress: false
@@ -28,7 +28,7 @@ jobs:
         sudo aptitude install libssl-dev -y
 
     - name: Clone Kernel Source
-      run: git clone --depth 1 --recurse-submodules --shallow-submodules --single-branch -b ${{ inputs.BRANCH }} ${{ inputs.URL }} kernel_root
+      run: git clone -q --depth=1 --single-branch -b ${{ inputs.ROOTDIR_BRANCH }} ${{ inputs.ROOTDIR_URL }} kernel_root
       working-directory: rootdir
 
     - name: Fetch toolchains
@@ -88,7 +88,7 @@ jobs:
 
     - name: Upload AnyKernel3
       continue-on-error: true
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: AnyKernel3-${{ steps.buildKernel.outputs.buildDetails }}
         path: rootdir/external/anykernel3/*
@@ -96,7 +96,7 @@ jobs:
 
     - name: Upload Image.gz
       continue-on-error: true
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: Image_GZ-${{ steps.buildKernel.outputs.buildDetails }}
         path: rootdir/kernel_root/out/target/product/a06/obj/KLEAF_OBJ/dist/kernel_device_modules-6.6/mgk_64_k66_kernel_aarch64.user/Image.gz
@@ -104,7 +104,7 @@ jobs:
 
     - name: Upload LKM
       continue-on-error: true
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: LKM-${{ steps.buildKernel.outputs.buildDetails }}
         path: rootdir/kernel_root/out/target/product/a06/obj/KLEAF_OBJ/dist/kernel_device_modules-6.6/mgk_64_k66_kernel_aarch64.user/drivers/*
