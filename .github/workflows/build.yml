@@ -8,7 +8,7 @@ on:
         required: true
       URL:
         description: 'Repository URL'
-        default: 'https://github.com/rsuntk/android_kernel_samsung_a05m-rootdir.git'
+        default: 'https://github.com/IsaacCodesStuff/Rem_kernel.git'
         required: true
   
 jobs:
@@ -34,10 +34,14 @@ jobs:
     - name: Fetch toolchains
       run: |
         cd kernel_root
-        aria2c https://github.com/rsuntkOrgs/android_kernel_samsung_a05m-6.6/releases/download/v1.0/xaa
-        aria2c https://github.com/rsuntkOrgs/android_kernel_samsung_a05m-6.6/releases/download/v1.0/xab
+        aria2c https://github.com/IsaacCodesStuff/samsung_kernel_action/releases/download/1.0/xaa
+        aria2c https://github.com/IsaacCodesStuff/samsung_kernel_action/releases/download/1.0/xab
+        aria2c https://github.com/IsaacCodesStuff/samsung_kernel_action/releases/download/1.0/xac
+        aria2c https://github.com/IsaacCodesStuff/samsung_kernel_action/releases/download/1.0/xad
+        aria2c https://github.com/IsaacCodesStuff/samsung_kernel_action/releases/download/1.0/xae
+        aria2c https://github.com/IsaacCodesStuff/samsung_kernel_action/releases/download/1.0/xaf
         echo "INFO: Appending files and extracting ..."
-        cat xaa xab > toolchains.tar.gz; tar -xf toolchains.tar.gz; rm toolchains.tar.gz xaa xab
+        cat x?? > toolchains.tar.gz; tar -xf toolchains.tar.gz; rm toolchains.tar.gz x??
       working-directory: rootdir
 
     - name: Prepare timezone fix
