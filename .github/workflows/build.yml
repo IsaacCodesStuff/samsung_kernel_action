@@ -1,0 +1,112 @@
+name: Build Kernel
+on:
+  workflow_dispatch:
+    inputs:
+      BRANCH:
+        description: 'Branch to build'
+        default: 'main'
+        required: true
+      URL:
+        description: 'Repository URL'
+        default: 'https://github.com/IsaacCodesStuff/Yoshino_kernel.git'
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        path: rootdir
+        show-progress: false
+        fetch-depth: 1
+        
+    - name: Prepare dependencies
+      run: |
+        sudo apt update -y
+        sudo apt install rsync bc cpio flex bison build-essential aptitude aria2 git python-is-python3 tar perl wget curl lz4 ccache -y
+        sudo aptitude install libssl-dev -y
+
+    - name: Clone Kernel Source
+      run: git clone --depth=1 --single-branch -b ${{ inputs.BRANCH }} ${{ inputs.URL }} kernel_root
+      working-directory: rootdir
+
+    - name: Fetch toolchains
+      run: |
+        cd kernel_root
+        aria2c https://github.com/IsaacCodesStuff/samsung_kernel_action/releases/download/5g-1.0/xaa
+        aria2c https://github.com/IsaacCodesStuff/samsung_kernel_action/releases/download/5g-1.0/xab
+        aria2c https://github.com/IsaacCodesStuff/samsung_kernel_action/releases/download/5g-1.0/xac
+        echo "INFO: Appending files and extracting ..."
+        cat x?? > toolchains.tar.gz; tar -xf toolchains.tar.gz; rm toolchains.tar.gz x??
+      working-directory: rootdir
+
+    - name: Prepare timezone fix
+      run: |
+        sudo rm /etc/localtime
+        sudo ln -s /usr/share/zoneinfo/Asia/Manila /etc/localtime
+
+    - name: Setup Java
+      uses: actions/setup-java@v5
+      with:
+        distribution: temurin
+        java-version: 21
+
+    - name: Build kernel
+      id: buildKernel
+      run: |
+        cd kernel_root
+        BUILD_TIME=$(date +'%Y%m%d%H%M')
+        GIT_SHA=$(git rev-parse --short HEAD)
+        DETAILS="A065F-${GIT_SHA}-${BUILD_TIME}"
+        
+        # Start building
+        bash build_kernel.sh
+
+        IMAGE_FILE="out/target/product/a06/obj/KLEAF_OBJ/dist/kernel_device_modules-6.6/mgk_64_k66_kernel_aarch64.user/Image.gz"
+        
+        if [ ! -f "$IMAGE_FILE" ]; then
+          echo "::error::Kernel Image.gz not found!"
+          exit 1
+        fi
+
+        cp "$IMAGE_FILE" ../external/anykernel3/
+        
+        pushd ../external/anykernel3
+        zip -r9 "../../${DETAILS}.zip" *
+        popd
+
+        echo "buildDetails=${DETAILS}" >> $GITHUB_OUTPUT
+        echo "zipPath=$(pwd)/../${DETAILS}.zip" >> $GITHUB_OUTPUT
+      working-directory: rootdir
+
+    - name: List trees
+      run: |
+        cd kernel_root/out/target/product/a06/obj/KLEAF_OBJ/dist/kernel_device_modules-6.6/mgk_64_k66_kernel_aarch64.user/
+        ls -la
+        find . -type f -name "Image.gz" || echo "Image.gz not found!"
+      working-directory: rootdir
+
+    - name: Upload AnyKernel3
+      continue-on-error: true
+      uses: actions/upload-artifact@v7
+      with:
+        name: AnyKernel3-${{ steps.buildKernel.outputs.buildDetails }}
+        path: rootdir/external/anykernel3/*
+        compression-level: 9
+
+    - name: Upload Image.gz
+      continue-on-error: true
+      uses: actions/upload-artifact@v7
+      with:
+        name: Image_GZ-${{ steps.buildKernel.outputs.buildDetails }}
+        path: rootdir/kernel_root/out/target/product/a06/obj/KLEAF_OBJ/dist/kernel_device_modules-6.6/mgk_64_k66_kernel_aarch64.user/Image.gz
+        compression-level: 9
+
+    - name: Upload LKM
+      continue-on-error: true
+      uses: actions/upload-artifact@v7
+      with:
+        name: LKM-${{ steps.buildKernel.outputs.buildDetails }}
+        path: rootdir/kernel_root/out/target/product/a06/obj/KLEAF_OBJ/dist/kernel_device_modules-6.6/mgk_64_k66_kernel_aarch64.user/drivers/*
+        compression-level: 9
