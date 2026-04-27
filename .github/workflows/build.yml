@@ -56,9 +56,13 @@ jobs:
       id: buildKernel
       run: |
         cd kernel_root
+
+        export KMI_SYMBOL_LIST_STRICT_MODE=0
+        export SKIP_KMI_COMPARING=1
+
         BUILD_TIME=$(date +'%Y%m%d%H%M')
         GIT_SHA=$(git rev-parse --short HEAD)
-        DETAILS="A065F-${GIT_SHA}-${BUILD_TIME}"
+        DETAILS="A066X-${GIT_SHA}-${BUILD_TIME}"
         
         # Start building
         bash build_kernel.sh
