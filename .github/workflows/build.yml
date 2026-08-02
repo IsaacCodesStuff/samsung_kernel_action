@@ -55,6 +55,10 @@ jobs:
         distribution: temurin
         java-version: 21
 
+    - name: Setup KernelSU
+      run: cd kernel_root/kernel-6.6; curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
+      working-directory: rootdir
+
     - name: Build kernel
       id: buildKernel
       run: |
